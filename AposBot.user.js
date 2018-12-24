@@ -824,33 +824,54 @@ function AposBot() {
 					var distance = Math.sqrt(diffX * diffX + diffY * diffY + 0.00001);
 					var ratio = cellSize / player[i].size;
 
+					//console.log(distance);
 					//for each direction in sight, count the cost
 					for(var direction = minDirection; direction!=maxDirection+1; direction++){
 						var realDirection = (direction+numDirection) % numDirection;
 						if(allIsIn[j].f){
-							if(distance<5 && cellSize<player[i].size)cost[realDirection]-= ratio * 1000 / distance;
+							if(distance<5 && cellSize<player[i].size)cost[realDirection]-= ratio * Math.min(1000 , 1000 / distance);
 							continue;
 						}
-						else if(cellSize * 1.33 < player[i].size)cost[realDirection]+= ratio * 10000 / distance;
-						else if(cellSize > 1.0 * player[i].size)cost[realDirection]-= ratio * 10000 / distance;
+						else if(ratio < 0.1) continue;
+						else if(cellSize * 1.16 < player[i].size)cost[realDirection]+= ratio * Math.min(10000 , 10000 / distance);
+						else if(cellSize > 1.0 * player[i].size)cost[realDirection]-= ratio * Math.min(10000 , 10000 / distance);
+
 					}
 				}
 				//console.log(cost);
 				//deciding movement
+
+				/*
 				var bestDirect = 0;
 				var worstDirect = 0;
 				for(var j = 0; j < numDirection; j++){
 					if(cost[j] > cost[bestDirect])bestDirect = j;
 					if(cost[j] < cost[worstDirect])worstDirect = j;
 				}
-				if(cost[worstDirect] < -30){
+				if(cost[bestDirect] == 0) return [0 ,0];
+				if(cost[worstDirect] < -100){
 					bestDirect = (worstDirect + numDirection/2)%numDirection;
 				}
-				//console.log(cost[bestDirect]);
-				if(cost[bestDirect] == 0) return [0, 0];
-
+				*/
+				var bestDirect = 0;
+				var worstDirect = 0;
+				var dx = 0.0;
+				var dy = 0.0;
+				for(var j = 0; j < numDirection; j++){
+					if(cost[worstDirect] < -30){
+						var thisDirect = (worstDirect + numDirection/2) % numDirection;
+						var thisRad = Math.PI + Math.PI/numDirection * (1 + thisDirect*2) ;
+						dx += Math.cos(thisRad) * Math.abs(cost[worstDirect]);
+						dy += Math.sin(thisRad) * Math.abs(cost[worstDirect]);
+					}
+					if(cost[j] > cost[bestDirect])bestDirect = j;
+				}
+				//console.log(dx, dy);
 				var bestRad = Math.PI + Math.PI/numDirection * (1 + bestDirect*2);
-				return [player[i].x + 100*Math.cos(bestRad) , player[i].y + 100*Math.sin(bestRad)];
+				
+				if(dx==0 && dy==0) return [player[i].x + 100*Math.cos(bestRad), player[i].y + 100*Math.sin(bestRad)];
+				
+				return [player[i].x + 100*dx, player[i].y + 100*dy];
             }
         }
     }
