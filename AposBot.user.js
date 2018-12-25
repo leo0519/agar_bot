@@ -712,82 +712,6 @@ function AposBot() {
         }
     }
 
-	this.getNeatInput = function(){ // try to get inputs for neat
-		var player = getPlayer();
-        if (player.length > 0) { //if player exist
-			var playerId = player.map(function(value, index){return value.id;});
-			//choose the max part
-			var max_id = 0;
-			for(var i=1; i<player.length; i++){
-				if(player[i].size > player[max_id].size){
-					max_id = i;
-				}
-			}
-			//count cost
-			var cost = [0, 0, 0, 0, 0, 0, 0, 0];
-            var allIsIn = getCellsArray();
-            for(var j = 0; j < allIsIn.length; j++){
-                if(playerId.indexOf(allIsIn[j].id) >= 0)continue;
-                var offsetX = allIsIn[j].x - player[max_id].x;
-                var offsetY = allIsIn[j].y - player[max_id].y;
-                var cellSize = allIsIn[j].size;
-                var slope = offsetY / (offsetX + 0.001);
-                var direct;
-
-                if(slope > 2.44)direct = 4 * (offsetX > 0);
-                else if(slope > 0.414)direct = 3 + 4 * (offsetX < 0);
-                else if(slope > -0.414)direct = 2 + 4 * (offsetX < 0);
-                else if(slope > -2.414)direct = 1 + 4 * (offsetX < 0);
-                else direct = 4 * (offsetX < 0);
-
-                var absX = offsetX>0 ? offsetX:-offsetX;
-                var absY = offsetY>0 ? offsetY:-offsetY;
-                var diffX = absX - player[max_id].size - cellSize;
-                diffX = diffX>0 ? diffX:0;
-                var diffY = absY - player[max_id].size - cellSize;
-                diffY = diffY>0 ? diffY:0;
-                var distance = diffX * diffX + diffY * diffY + 0.001;
-
-                var ratio = cellSize / player[max_id].size;
-
-                if(allIsIn[j].f){
-                    cost[direct]-= ratio * 1000 / distance;
-                }
-                else if(cellSize * 1.33 < player[max_id].size)cost[direct]+= ratio * 10000 / distance;
-                else if(cellSize > 1.1 * player[max_id].size)cost[direct]-= ratio * 10000 / distance;
-            }
-
-			return cost;
-		}
-
-	}
-
-	this.NeatStruct = function(){
-		this.numNode = 9;
-		this.Node = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-		this.NodeOut = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-		this.NodeOutConfirmed = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-		this.numEdge = 8;
-		this.Edge = [[0,8,1.0], [1,8,1.0], [2,8,1.0], [3,8,1.0], [4,8,1.0], [5,8,1.0], [6,8,1.0], [7,8,1.0]];
-	}
-
-	this.neat = function(){
-		var input = this.getNeatInput();
-		var struct = new this.NeatStruct();
-
-        for(var i=0; i<8; i++){ //get inputs
-			NodeOut[i] = input[i];
-			NodeOutConfirmed[i] = 1;
-		}
-		for(var i=0; i<numEdge; i++){
-
-		}
-
-
-		return [0, 0];
-	}
-
 	this.version2 = function(){ //needs to be done: wall
         var player = getPlayer();
         if (player.length > 0) {
@@ -815,68 +739,61 @@ function AposBot() {
 					var maxDirection = Math.floor((Rad + Rad2) * numDirection / 2 / Math.PI) + numDirection / 2;
 
 					//distance minus size
-					var absX = offsetX>0 ? offsetX:-offsetX;
-					var absY = offsetY>0 ? offsetY:-offsetY;
-					var diffX = absX - player[i].size - cellSize;
-					diffX = diffX>0 ? diffX:0;
-					var diffY = absY - player[i].size - cellSize;
-					diffY = diffY>0 ? diffY:0;
-					var distance = Math.sqrt(diffX * diffX + diffY * diffY + 0.00001);
+					var distance = this.computeDistance(player[i].x, player[i].y, allIsIn[j].x, allIsIn[j].y, player[i].size, allIsIn[j].size);
 					var ratio = cellSize / player[i].size;
 
-					//console.log(distance);
 					//for each direction in sight, count the cost
 					for(var direction = minDirection; direction!=maxDirection+1; direction++){
 						var realDirection = (direction+numDirection) % numDirection;
 						if(allIsIn[j].f){
-							if(distance<5 && cellSize<player[i].size)cost[realDirection]-= ratio * Math.min(1000 , 1000 / distance);
+							if(cellSize<player[i].size)cost[realDirection]-= ratio * Math.min(10000 , 1000 / distance);
 							continue;
 						}
-						else if(ratio < 0.1) continue;
-						else if(cellSize * 1.16 < player[i].size)cost[realDirection]+= ratio * Math.min(10000 , 10000 / distance);
-						else if(cellSize > 1.0 * player[i].size)cost[realDirection]-= ratio * Math.min(10000 , 10000 / distance);
+						else if(cellSize * 1.16 < player[i].size)cost[realDirection]+= ratio * Math.min(10000 ,  10000 / distance);
+						else if(cellSize > 1.1 * player[i].size)cost[realDirection]-= ratio * Math.min(10000 ,  10000 / distance);
 
 					}
 				}
-				//console.log(cost);
-				//deciding movement
-
-				/*
+				
+				
+				
+				
 				var bestDirect = 0;
-				var worstDirect = 0;
-				for(var j = 0; j < numDirection; j++){
-					if(cost[j] > cost[bestDirect])bestDirect = j;
-					if(cost[j] < cost[worstDirect])worstDirect = j;
-				}
-				if(cost[bestDirect] == 0) return [0 ,0];
-				if(cost[worstDirect] < -100){
-					bestDirect = (worstDirect + numDirection/2)%numDirection;
-				}
-				*/
-				var bestDirect = 0;
-				var worstDirect = 0;
 				var dx = 0.0;
 				var dy = 0.0;
+				//console.log(cost)
+				var noThreat = 1;
 				for(var j = 0; j < numDirection; j++){
-					if(cost[worstDirect] < -30){
-						var thisDirect = (worstDirect + numDirection/2) % numDirection;
+					if(cost[j] < -100){
+                        noThreat = 0;
+						var thisDirect = (j + numDirection/2) % numDirection;
 						var thisRad = Math.PI + Math.PI/numDirection * (1 + thisDirect*2) ;
-						dx += Math.cos(thisRad) * Math.abs(cost[worstDirect]);
-						dy += Math.sin(thisRad) * Math.abs(cost[worstDirect]);
+						dx += Math.cos(thisRad) * Math.abs(cost[j]);
+						dy += Math.sin(thisRad) * Math.abs(cost[j]);
+						var drawx = Math.cos(thisRad) * 3 * player[i].size;
+						var drawy = Math.sin(thisRad) * 3 * player[i].size;
+						drawLine(player[i].x, player[i].y, player[i].x + drawx, player[i].y + drawy, 5);
 					}
 					if(cost[j] > cost[bestDirect])bestDirect = j;
 				}
 				//console.log(dx, dy);
 				var bestRad = Math.PI + Math.PI/numDirection * (1 + bestDirect*2);
+
+				if(noThreat) {
+					drawx = Math.cos(bestRad) * 3 * player[i].size;
+					drawy = Math.sin(bestRad) * 3 * player[i].size;
+					drawLine(player[i].x, player[i].y, player[i].x + drawx, player[i].y + drawy, 1);
+					return [player[i].x + 100000*Math.cos(bestRad), player[i].y + 100000*Math.sin(bestRad)];
+				}
 				
-				if(dx==0 && dy==0) return [player[i].x + 100*Math.cos(bestRad), player[i].y + 100*Math.sin(bestRad)];
 				
-				return [player[i].x + 100*dx, player[i].y + 100*dy];
+
+				return [player[i].x + 100000*dx, player[i].y + 100000*dy];
             }
         }
     }
 
-	this.mainLoop = this.version1;
+	this.mainLoop = this.version2;
 };
 window.botList.push(new AposBot());
 
