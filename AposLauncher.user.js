@@ -12,7 +12,7 @@ Number.prototype.mod = function(n){
     return (this + n) % n;
 };
 window.log = function(message){
-    if(false){
+    if(window.debug){
         console.log.apply(console, arguments);
     }
 }
@@ -22,6 +22,7 @@ var keyim = $(".mykey").val();
         if (84 == e.keyCode)toggle = !toggle;
         if (82 == e.keyCode)toggleDraw = !toggleDraw;
         if (68 == e.keyCode)window.setDarkTheme(!getDarkBool());
+	if (67 == e.keyCode)window.debug = !window.debug;
         if (70 == e.keyCode)window.setShowMass(!getMassBool());
         window.botList[botIndex].keyAction(e);
     }
