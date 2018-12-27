@@ -840,7 +840,7 @@ function AposBot() {
         }
     }
         
-    }
+    
 
 	this.mainLoop = this.version1;
 };
