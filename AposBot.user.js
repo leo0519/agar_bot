@@ -705,6 +705,7 @@ function AposBot() {
             return [player[0].x + direct[0] * 1000, player[0].y + direct[1] * 1000];
         }
     }
+    /*
     this.bestDir = function(player, cells){
         var direct = [0, 0];
         var weight;
@@ -732,7 +733,7 @@ function AposBot() {
             var bestDir = this.bestDirect(player[0], cells);
         }
     }
-	
+	*/
     this.sendPost = function(cost, x, y){
 		var str = "";
 		for(var i=0; i<8; i++)
@@ -762,7 +763,7 @@ function AposBot() {
 				if(player[j].size > player[i].size) i = j;
 			}
 
-			var numDirection = 16; //even number of direction
+			var numDirection = 8; //even number of direction
 			var cost = [];
 			for(var j=0; j<numDirection; j++) cost.push(0);
 			var allIsIn = getCellsArray();
@@ -838,11 +839,67 @@ function AposBot() {
 				return [pX + 10 * pSize * Math.cos(bestRad), pY + 10 * pSize * Math.sin(bestRad)];
 			}
         }
-    }
-        
-    
 
-	this.mainLoop = this.version1;
+
+    }
+
+	this.worstDir = function(player, cells){
+        var playerId = player.map(function(value, index){return value.id;});
+
+		var numDirection = 8; //even number of direction
+		var cost = [];
+		for(var j=0; j<numDirection; j++) cost.push(0);
+		var allIsIn = cells;
+		var pX = player[i].x;
+		var pY = player[i].y;
+		var pSize = player[i].size;
+
+        for(var j = 0; j < allIsIn.length; j++){
+            if(playerId.indexOf(allIsIn[j].id) >= 0)continue; //self
+			//basic
+            var offsetX = allIsIn[j].x - pX;
+            var offsetY = allIsIn[j].y - pY;
+			var offsetZ = Math.sqrt(offsetX*offsetX + offsetY*offsetY);
+            var cellSize = allIsIn[j].size;
+			//compute directions and rads
+		    var Rad = Math.atan2(offsetY, offsetX);
+			var Rad2 = Math.atan(1.2* cellSize / offsetZ);
+			var minDirection = this.RadToDirect(Rad - Rad2, numDirection);
+			var maxDirection = this.RadToDirect(Rad + Rad2, numDirection);
+			//distance
+			var distance = this.computeDistance(pX, pY, allIsIn[j].x, allIsIn[j].y, pSize, cellSize);
+			var ratio = cellSize / pSize;
+			//for each direction in sight, count the cost
+			for(var direction = minDirection; direction!=maxDirection+1; direction++){
+				if(this.isVirus(allIsIn[j])){
+					if(ratio < 1) cost[direction]-= ratio * Math.min(30*pSize , 3000 / distance);
+					continue;
+				}
+				else if(cellSize * 1.16 < pSize) cost[direction]+= ratio * Math.min(100*cellSize ,  10000 / distance);
+				else if(cellSize > 1.1 * pSize)  cost[direction]-= ratio * Math.min(30*cellSize ,  3000 / distance);
+			}
+		}
+		//get worst and best direction
+		var worstDirect = 0;
+		var bestDirect = 0;
+		for(var j = 0; j < numDirection; j++){
+			if(cost[j] > cost[bestDirect])bestDirect = j;
+			if(cost[j] < cost[worstDirect])worstDirect = j;
+		}
+
+		//return
+		if(Math.abs(cost[worstDirect]) > Math.abs(cost[bestDirect])){
+			worstDirect = (worstDirect + numDirection/2) % numDirection; //inverse the direction
+			var worstRad = this.DirectToRad(worstDirect, numDirection);
+			return [Math.cos(worstRad), Math.sin(worstRad)];
+		}
+		else{
+			var bestRad = this.DirectToRad(bestDirect, numDirection);
+			return [Math.cos(bestRad), Math.sin(bestRad)];
+		}
+	}
+
+	this.mainLoop = this.version2;
 };
 window.botList.push(new AposBot());
 
