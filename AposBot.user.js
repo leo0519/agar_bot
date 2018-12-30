@@ -705,7 +705,6 @@ function AposBot() {
             return [player[0].x + direct[0] * 1000, player[0].y + direct[1] * 1000];
         }
     }
-    /*
     this.bestDir = function(player, cells){
         var direct = [0, 0];
         var weight;
@@ -713,13 +712,13 @@ function AposBot() {
             var Vu = this.unit([cells[i].x - player.x, cells[i].y - player.y]);
             var Len = this.computeDistance(player.x, player.y, cells[i].x, cells[i].y, player.size, cells[i].size);
             if(this.isVirus(cells[i]) && this.isFood(player, cells[i]))weight = -1 * player.size * player.size * this.cost(Len, 10);
-            else if(this.isFood(player, cells[i]))weight = cells[i].size * cells[i].size * this.cost(Len, 0,8);
-            else if(this.isThreat(player, cells[i]))weight = -1 * player[i].size * player[i].size * this.cost(Len);
+            else if(this.isFood(player, cells[i]))weight = cells[i].size * cells[i].size * this.cost(Len);
+            else if(this.isThreat(player, cells[i]))weight = -1 * player.size * player.size * this.cost(Len);
             else weight = 0;
             for(var k = 0; k < 2; k++)direct[k]+= Vu[k] * weight;
         }
         var Cen = Math.min(getMapEndX() - player.x, player.x - getMapStartX(), getMapEndY() - player.y, player.y - getMapStartY());
-        weight = player.size * player.size * this.cost(Cen, 0.1);
+        weight = player.size * this.cost(Cen, 0.1);
         var Vu = [player.x - (getMapStartX() + getMapEndX()) / 2, player.y - (getMapStartY() + getMapEndY()) / 2];
         Vu = this.unit(Vu);
         for(var j = 0; j <= 1; j++)direct[j]+= -1 * Vu[j] * weight;
@@ -728,12 +727,31 @@ function AposBot() {
     }
     this.minmax = function(){
         var player = getPlayer();
+        var isItMe = this.isItMe;
+        var haha = getCellsArray();
+        var cells = haha;
+        var cellsLen = cells.length;
         if(player.length > 0){
-            var cells = getCellsArray();
-            var bestDir = this.bestDirect(player[0], cells);
+            player = player[0];
+            for(var i = 0; i < cellsLen; i++){
+                if(this.isItMe(cells[i]))continue;
+                if(this.isVirus(cells[i]) || cells[i].size <= 20)continue;
+                var tempCells = cells.filter(function(item, index, array){
+                    return !(item.name === cells[i].name);
+                });
+                var direct = this.bestDir(cells[i], tempCells);
+                var newC = cells[i];
+                newC.x+= Math.pow(cells[i].size, -0.88) * 76 * direct[0];
+                newC.y+= Math.pow(cells[i].size, -0.88) * 76 * direct[1];
+                cells.push(newC)
+            }
+            cells = cells.filter(function(item, index, array){
+                return !(isItMe(item));
+            });
+            var best = this.bestDir(player, cells);
+            return [player.x + best[0] * 1000, player.y + best[1] * 1000];
         }
     }
-	*/
     this.sendPost = function(cost, x, y){
 		var str = "";
 		for(var i=0; i<8; i++)
