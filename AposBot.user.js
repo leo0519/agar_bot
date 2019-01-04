@@ -711,17 +711,20 @@ function AposBot() {
         for(var i = 0; i < cells.length; i++){
             var Vu = this.unit([cells[i].x - player.x, cells[i].y - player.y]);
             var Len = this.computeDistance(player.x, player.y, cells[i].x, cells[i].y, player.size, cells[i].size);
-            if(this.isVirus(cells[i]) && this.isFood(player, cells[i]))weight = -1 * player.size * player.size * this.cost(Len, 10);
-            else if(this.isFood(player, cells[i]))weight = cells[i].size * cells[i].size * this.cost(Len);
-            else if(this.isThreat(player, cells[i]))weight = -1 * player.size * player.size * this.cost(Len);
+            if(this.isVirus(cells[i]) && this.isFood(player, cells[i]))weight = -1 * player.size * this.cost(Len, 10);
+            else if(this.isFood(player, cells[i]))weight = cells[i].size * this.cost(Len);
+            else if(this.isThreat(player, cells[i]))weight = -1 * player.size * this.cost(Len);
             else weight = 0;
             for(var k = 0; k < 2; k++)direct[k]+= Vu[k] * weight;
+            //drawPoint(player.x + player.size * Vu[0], player.y + player.size * Vu[1], 5, weight.toFixed(2));
         }
+		/*
         var Cen = Math.min(getMapEndX() - player.x, player.x - getMapStartX(), getMapEndY() - player.y, player.y - getMapStartY());
         weight = player.size * this.cost(Cen, 0.1);
         var Vu = [player.x - (getMapStartX() + getMapEndX()) / 2, player.y - (getMapStartY() + getMapEndY()) / 2];
         Vu = this.unit(Vu);
         for(var j = 0; j <= 1; j++)direct[j]+= -1 * Vu[j] * weight;
+		*/
         direct = this.unit(direct);
         return direct;
     }
@@ -733,6 +736,7 @@ function AposBot() {
         var cellsLen = cells.length;
         if(player.length > 0){
             player = player[0];
+
             for(var i = 0; i < cellsLen; i++){
                 if(this.isItMe(cells[i]))continue;
                 if(this.isVirus(cells[i]) || cells[i].size <= 20)continue;
@@ -740,13 +744,17 @@ function AposBot() {
                     return !(item.name === cells[i].name);
                 });
                 var direct = this.bestDir(cells[i], tempCells);
-                var newC = cells[i];
-                newC.x+= Math.pow(cells[i].size, -0.88) * 76 * direct[0];
-                newC.y+= Math.pow(cells[i].size, -0.88) * 76 * direct[1];
-                cells.push(newC)
+                //drawLine( cells[i].x, cells[i].y, cells[i].x + 1.2 * cells[i].size * direct[0], cells[i].y + 1.2 * cells[i].size * direct[1], 1);
+                //var newC = cells[i];
+                //newC.x+= Math.pow(cells[i].size, -0.88) * 76 * direct[0];
+                //newC.y+= Math.pow(cells[i].size, -0.88) * 76 * direct[1];
+				//cells.push(newC)
+				cells[i].x = cells[i].x + Math.pow(cells[i].size, -0.88) * 76 * direct[0];
+				cells[i].y = cells[i].y + Math.pow(cells[i].size, -0.88) * 76 * direct[1];
             }
+
             cells = cells.filter(function(item, index, array){
-                return !(isItMe(item));
+                return !(item.name === player.name);
             });
             var best = this.bestDir(player, cells);
             return [player.x + best[0] * 1000, player.y + best[1] * 1000];
@@ -781,7 +789,7 @@ function AposBot() {
 				if(player[j].size > player[i].size) i = j;
 			}
 
-			var numDirection = 8; //even number of direction
+			var numDirection = 4; //even number of direction
 			var cost = [];
 			for(var j=0; j<numDirection; j++) cost.push(0);
 			var allIsIn = getCellsArray();
@@ -862,18 +870,16 @@ function AposBot() {
     }
 
 	this.worstDir = function(player, cells){
-        var playerId = player.map(function(value, index){return value.id;});
-
 		var numDirection = 8; //even number of direction
 		var cost = [];
 		for(var j=0; j<numDirection; j++) cost.push(0);
 		var allIsIn = cells;
-		var pX = player[i].x;
-		var pY = player[i].y;
-		var pSize = player[i].size;
+		var pX = player.x;
+		var pY = player.y;
+		var pSize = player.size;
 
         for(var j = 0; j < allIsIn.length; j++){
-            if(playerId.indexOf(allIsIn[j].id) >= 0)continue; //self
+            if(this.isItMe(player, allIsIn[j]))continue; //self
 			//basic
             var offsetX = allIsIn[j].x - pX;
             var offsetY = allIsIn[j].y - pY;
@@ -917,7 +923,7 @@ function AposBot() {
 		}
 	}
 
-	this.mainLoop = this.version2;
+	this.mainLoop = this.minmax;
 };
 window.botList.push(new AposBot());
 
