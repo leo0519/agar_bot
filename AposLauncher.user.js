@@ -12,7 +12,7 @@ Number.prototype.mod = function(n){
     return (this + n) % n;
 };
 window.log = function(message){
-    if(window.debug){
+    if(false){
         console.log.apply(console, arguments);
     }
 }
@@ -22,16 +22,7 @@ var keyim = $(".mykey").val();
         if (84 == e.keyCode)toggle = !toggle;
         if (82 == e.keyCode)toggleDraw = !toggleDraw;
         if (68 == e.keyCode)window.setDarkTheme(!getDarkBool());
-		if (67 == e.keyCode)window.debug = !window.debug;
         if (70 == e.keyCode)window.setShowMass(!getMassBool());
-		if (83 == e.keyCode){
-            function send(){
-                var str = window.needed;
-			    window.open("http://140.112.31.196:11111/?data=" + str);
-                setTimeout(send, 1000);
-            }
-            send();
-		}
         window.botList[botIndex].keyAction(e);
     }
     function Mb() {
@@ -562,6 +553,7 @@ wheel = gb;
 
         if (getPlayer().length == 0 && !firstStart) {
             window.log("Revive");
+            originalName = "awesome";
             setNick(originalName);
             reviving = true;
         } else if (getPlayer().length > 0 && reviving) {
